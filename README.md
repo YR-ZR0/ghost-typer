@@ -26,3 +26,5 @@ Download and Install ffmpeg, git and python3
 **Step 3:**
 
     python3 whisper-typer-tool.py
+## TODO
+- [ ] Make the transcription realtime by chunking audio
