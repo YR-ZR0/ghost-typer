@@ -45,7 +45,7 @@ def transcribe_speech():
     while True:
         while FILE_READY_COUNTER < i:
             time.sleep(0.01)
-        result, info = MODEL.transcribe("test" + str(i) + ".wav", beam_size=5)
+        result, info = MODEL.transcribe("test" + str(i) + ".wav", beam_size=5, word_timestamps=False)
         result = list(result)
         for element in result:
             try:
@@ -99,10 +99,6 @@ def record_speech():
     with sd.InputStream(device=device_index, channels=channels, callback=callback):
         while STOP_RECORDING is False:
             time.sleep(0.1)
-
-    wave_obj = sa.WaveObject.from_wave_file("off.wav")
-    play_obj = wave_obj.play()
-    play_obj.wait_done()
     print("Finish recording")
 
     # Convert the frames queue to a list
