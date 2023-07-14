@@ -18,7 +18,7 @@ import numpy  # Make sure NumPy is loaded before it is used in the callback
 assert numpy  # avoid "imported but unused" message (W0611)
 
 print(sd.query_devices())
-device_index = input("Enter the device index: ")
+device_index = input("Enter the device name: ")
 # model selection -> (tiny base small medium large)
 model_size = "medium"
 print(f"loading model {model_size}...")

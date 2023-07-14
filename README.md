@@ -1,7 +1,7 @@
 # ghost-typer
 
 This is a python script using [guillaumekln/faster-whisper](https://github.com/guillaumekln/faster-whisper) to type with your voice.
-After you start the script you just press **F12** to start/stop recording. After the record is finished, it will type what you said starting at the current cursor position in any editor,input field etc.
+After you start the script select your sound device by typing its name or a unique string that identifies it e.g. if you device is listed as Yeti Blue USB Pulse, you can type Yeti USB and that will select it then you just press **F12** to start/stop recording. After the record is finished, it will type what you said starting at the current cursor position in any editor,input field etc.
 
 # Setup Instructions
 
