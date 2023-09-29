@@ -2,3 +2,5 @@ pynput
 sounddevice
 soundfile
 faster-whisper
+pystray
+Pillow

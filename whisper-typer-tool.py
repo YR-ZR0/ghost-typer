@@ -2,25 +2,65 @@
 Uses OpenAi Whisper to transcribe text and types it using pynput
 """
 
+import configparser
 import os
+import queue
 import threading
 import time
-import sounddevice as sd
-import simpleaudio as sa
-from pynput import keyboard
-from faster_whisper import WhisperModel
-import queue
 
-
-import soundfile as sf
 import numpy  # Make sure NumPy is loaded before it is used in the callback
+import pystray
+import soundfile as sf
+import sounddevice as sd
+from faster_whisper import WhisperModel
+from pynput import keyboard
+from PIL import Image, ImageDraw
 
 assert numpy  # avoid "imported but unused" message (W0611)
 
-print(sd.query_devices())
-device_index = input("Enter the device name: ")
-# model selection -> (tiny base small medium large)
-model_size = "medium"
+
+# create a ConfigParser object
+config = configparser.ConfigParser()
+
+# read the preferences from the file
+config.read("prefs.ini", encoding="utf-8")
+device_index = config.get("audio", "device_index", fallback=None)
+model_size = config.get("model", "model_size", fallback=None)
+
+
+def create_image(width, height, color1):
+    # Generate an image and draw a pattern
+    image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    dc = ImageDraw.Draw(image)
+    # calculate center of the image
+    center_x = width // 2
+    center_y = height // 2
+
+    # calculate radius of the ellipse
+    radius = min(center_x, center_y) - 10
+
+    # calculate bounding box of the ellipse
+    left = center_x - radius
+    top = center_y - radius
+    right = center_x + radius
+    bottom = center_y + radius
+
+    dc.ellipse((left, top, right, bottom), fill=color1)
+
+    return image
+
+
+if not device_index:
+    print(sd.query_devices())
+    device_index = input("Enter the device index: ")
+    config["audio"] = {"device_index": device_index}
+if not model_size:
+    model_size = input("Enter the model size (tiny, base, small, medium, large): ")
+    config["model"] = {"model_size": model_size}
+
+with open("prefs.ini", "w", encoding="utf-8") as configfile:
+    config.write(configfile)
+
 print(f"loading model {model_size}...")
 # load model
 MODEL = WhisperModel(model_size, device="cpu", compute_type="int8")
@@ -34,6 +74,8 @@ FILE_READY_COUNTER = 0
 STOP_RECORDING = False
 IS_RECORDING = False
 pykeyboard = keyboard.Controller()
+icon = pystray.Icon("GhostTyper", icon=create_image(64, 64, "red"))
+icon.run_detached()
 
 
 def transcribe_speech():
@@ -45,7 +87,9 @@ def transcribe_speech():
     while True:
         while FILE_READY_COUNTER < i:
             time.sleep(0.01)
-        result, info = MODEL.transcribe("test" + str(i) + ".wav", beam_size=5, word_timestamps=False)
+        result, _ = MODEL.transcribe(
+            "test" + str(i) + ".wav", beam_size=5, word_timestamps=False
+        )
         result = list(result)
         for element in result:
             try:
@@ -82,24 +126,24 @@ def record_speech():
 
     IS_RECORDING = True
     device_info = sd.query_devices(device_index)
-    device_name = device_info["name"]
     channels = device_info["max_input_channels"]
-
-    print(f"Recording from '{device_name}'...")
-    print(f"Channels: {sd.default.channels}")
-    print(f"Sample Rate: {sd.default.samplerate}")
 
     frames = queue.Queue()  # Initialize a queue to store frames
 
     print("Start recording...\n")
 
-    def callback(indata, frame_count, time_info, status):
+    icon.icon = create_image(64, 64, "green")
+    icon._update_icon()
+
+    def callback(indata):
         frames.put(indata.copy())
 
     with sd.InputStream(device=device_index, channels=channels, callback=callback):
         while STOP_RECORDING is False:
             time.sleep(0.1)
     print("Finish recording")
+    icon.icon = create_image(64, 64, "red")
+    icon._update_icon()
 
     # Convert the frames queue to a list
     frames_list = list(frames.queue)
